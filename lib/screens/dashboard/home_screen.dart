@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../providers/health_provider.dart';
 import '../../models/sleep.dart';
-import '../../models/hydration.dart';
 import '../../widgets/avatar_widget.dart';
 import '../habits/habits_screen.dart';
 import '../nutrition/nutrition_screen.dart';
@@ -51,9 +50,6 @@ class HomeScreen extends StatelessWidget {
     );
     final loggedMeals = todayNutrition.map((e) => e.mealType).toSet().length;
     final totalCalories = todayNutrition.fold(0, (sum, item) => sum + item.calories);
-    final totalProtein = todayNutrition.fold(0, (sum, item) => sum + item.protein);
-    final totalCarbs = todayNutrition.fold(0, (sum, item) => sum + item.carbs);
-    final totalFat = todayNutrition.fold(0, (sum, item) => sum + item.fat);
 
     // Streaks
     final streaks = provider.getStreaks();
@@ -73,34 +69,41 @@ class HomeScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        AvatarWidget(
-                          avatarId: profile?.profilePic ?? 'avatar1',
-                          radius: 22,
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Welcome back,",
-                              style: TextStyle(
-                                color: AuroraTheme.textSecondary,
-                                fontSize: 13,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            Text(
-                              profile?.name ?? "Explorer",
-                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                    fontWeight: FontWeight.w800,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          AvatarWidget(
+                            avatarId: profile?.profilePic ?? 'avatar1',
+                            radius: 22,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Welcome back,",
+                                  style: TextStyle(
+                                    color: AuroraTheme.textSecondary,
+                                    fontSize: 13,
+                                    letterSpacing: 0.5,
                                   ),
+                                ),
+                                Text(
+                                  profile?.name ?? "Explorer",
+                                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 12),
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(

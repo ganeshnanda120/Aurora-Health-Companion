@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme.dart';
-import '../../core/name_formatter.dart';
 import '../../models/user_profile.dart';
 import '../../providers/health_provider.dart';
 import '../../widgets/avatar_widget.dart';
@@ -166,8 +165,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    final userEmail = Provider.of<HealthProvider>(context, listen: false).userEmail;
-    if (userEmail != null && userEmail.contains("demo")) {
+    final provider = Provider.of<HealthProvider>(context, listen: false);
+    final userEmail = provider.userEmail;
+    final profile = provider.profile;
+
+    if (profile != null) {
+      _nameController.text = profile.name;
+      _ageController.text = profile.age > 0 ? profile.age.toString() : "";
+      _gender = profile.gender.isNotEmpty && ['Male', 'Female', 'Other'].contains(profile.gender) ? profile.gender : null;
+      _heightController.text = profile.height > 0 ? profile.height.toString() : "";
+      _weightController.text = profile.weight > 0 ? profile.weight.toString() : "";
+      _selectedGoals.addAll(profile.healthGoals);
+      if (profile.profilePic.isNotEmpty) {
+        _selectedAvatar = profile.profilePic;
+      }
+    } else if (userEmail != null && userEmail.contains("demo")) {
       _nameController.text = "Demo User";
       _ageController.text = "28";
       _gender = 'Female';
@@ -215,7 +227,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final provider = Provider.of<HealthProvider>(context, listen: false);
 
     final profile = UserProfile(
-      name: SpecialNameFormatter.formatName(_nameController.text),
+      name: _nameController.text.trim(),
       age: int.tryParse(_ageController.text) ?? 25,
       gender: _gender ?? 'Female',
       height: double.tryParse(_heightController.text) ?? 170.0,
@@ -422,8 +434,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
             TextFormField(
               controller: _nameController,
-              textCapitalization: TextCapitalization.none,
-              inputFormatters: [SpecialNameFormatter()],
+              textCapitalization: TextCapitalization.words,
               decoration: const InputDecoration(
                 labelText: "What should we call you?",
                 prefixIcon: Icon(Icons.person_rounded),
@@ -567,9 +578,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           const SizedBox(height: 12),
                           const Text("Wake Up", style: TextStyle(color: AuroraTheme.textSecondary)),
                           const SizedBox(height: 8),
-                          Text(
-                            _wakeTime.format(context),
-                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AuroraTheme.textPrimary),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              _wakeTime.format(context),
+                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AuroraTheme.textPrimary),
+                            ),
                           ),
                         ],
                       ),
@@ -592,9 +606,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           const SizedBox(height: 12),
                           const Text("Bedtime", style: TextStyle(color: AuroraTheme.textSecondary)),
                           const SizedBox(height: 8),
-                          Text(
-                            _bedTime.format(context),
-                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AuroraTheme.textPrimary),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              _bedTime.format(context),
+                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AuroraTheme.textPrimary),
+                            ),
                           ),
                         ],
                       ),
@@ -807,7 +824,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(width: 12),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: AuroraTheme.textPrimary)),
+             Expanded(
+               child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: AuroraTheme.textPrimary)),
+             ),
           ],
         ),
         subtitle: Padding(

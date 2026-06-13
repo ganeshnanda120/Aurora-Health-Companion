@@ -55,10 +55,7 @@ class HealthProvider extends ChangeNotifier {
     _nutritionLogs = _storage.getNutritionLogs();
     _messages = _storage.getAiMessages();
 
-    // If logged in but empty, generate mock data to showcase the charts / dashboard
-    if (_isAuthenticated && _hydrationLogs.isEmpty && _sleepLogs.isEmpty && _habits.isEmpty) {
-      _generateMockTelemetryData();
-    }
+    // Do not generate mock/fake telemetry reports
 
     notifyListeners();
   }
@@ -72,13 +69,11 @@ class HealthProvider extends ChangeNotifier {
       await _storage.saveLoggedInEmail(email);
 
       // Check if onboarded (simulated)
-      final existingProfile = _storage.getUserProfile();
-      if (existingProfile != null) {
-        _isOnboarded = true;
-        _profile = existingProfile;
-        await _storage.setOnboarded(true);
+      _isOnboarded = _storage.isOnboarded();
+      if (_isOnboarded) {
+        _profile = _storage.getUserProfile();
       } else {
-        _isOnboarded = false;
+        _profile = null;
       }
 
       _loadFromStorage();
@@ -127,13 +122,11 @@ class HealthProvider extends ChangeNotifier {
     await _storage.saveLoggedInEmail(_userEmail!);
     
     // Check if onboarded (simulated)
-    final existingProfile = _storage.getUserProfile();
-    if (existingProfile != null) {
-      _isOnboarded = true;
-      _profile = existingProfile;
-      await _storage.setOnboarded(true);
+    _isOnboarded = _storage.isOnboarded();
+    if (_isOnboarded) {
+      _profile = _storage.getUserProfile();
     } else {
-      _isOnboarded = false;
+      _profile = null;
     }
     
     _loadFromStorage();
@@ -154,8 +147,7 @@ class HealthProvider extends ChangeNotifier {
     await _storage.saveUserProfile(userProfile);
     await _storage.setOnboarded(true);
     
-    // Generate telemetry for new profile so charts look stunning
-    _generateMockTelemetryData();
+    // Do not generate mock/fake telemetry reports
     notifyListeners();
   }
 
@@ -538,138 +530,5 @@ class HealthProvider extends ChangeNotifier {
     }
 
     return insights;
-  }
-
-  // --- Seed Mock Telemetry Data ---
-  void _generateMockTelemetryData() {
-    final now = DateTime.now();
-
-    // 1. Core Profile if empty
-    if (_profile == null) {
-      _profile = UserProfile(
-        name: 'Demo User',
-        age: 28,
-        gender: 'Female',
-        height: 168.0,
-        weight: 62.0,
-        wakeUpTime: '06:30',
-        bedTime: '22:30',
-        activityLevel: 'Moderate',
-        healthGoals: ['Improve Hydration', 'Sleep Better', 'Build Better Habits'],
-        notificationPreferences: {
-          'Hydration': true,
-          'Sleep': true,
-          'Habits': true,
-          'Insights': true,
-        },
-      );
-      _storage.saveUserProfile(_profile!);
-    }
-
-    // 2. Hydration logs for last 7 days
-    _hydrationLogs = [];
-    final random = Random();
-    for (int i = 6; i >= 0; i--) {
-      final day = now.subtract(Duration(days: i));
-      // Make hydration high on most days, low on a couple
-      final count = i == 2 || i == 5 ? 3 : 5; // lower intake on 2 days ago
-      for (int c = 0; c < count; c++) {
-        _hydrationLogs.add(HydrationLog(
-          id: _uuid.v4(),
-          amountMl: 250 + (random.nextInt(3) * 250), // 250, 500, or 750
-          timestamp: DateTime(day.year, day.month, day.day, 8 + (c * 3), random.nextInt(60)),
-        ));
-      }
-    }
-    _storage.saveHydrationLogs(_hydrationLogs);
-
-    // 3. Sleep logs for last 7 days
-    _sleepLogs = [];
-    final sleepDurations = [7.5, 8.0, 6.2, 7.8, 8.5, 8.2, 7.0];
-    final sleepQualities = [85, 90, 60, 80, 95, 92, 88];
-    for (int i = 6; i >= 0; i--) {
-      final day = now.subtract(Duration(days: i));
-      _sleepLogs.add(SleepLog(
-        id: _uuid.v4(),
-        date: DateTime(day.year, day.month, day.day),
-        durationHours: sleepDurations[i],
-        qualityScore: sleepQualities[i],
-        notes: i == 2 ? "Woke up in the middle of the night" : "Felt refreshed",
-      ));
-    }
-    _storage.saveSleepLogs(_sleepLogs);
-
-    // 4. Habits default setup
-    _habits = [
-      Habit(id: _uuid.v4(), title: 'Daily Meditation', category: 'Mindfulness', createdAt: now.subtract(const Duration(days: 10)), history: {}),
-      Habit(id: _uuid.v4(), title: '30m Morning Walk', category: 'Physical', createdAt: now.subtract(const Duration(days: 10)), history: {}),
-      Habit(id: _uuid.v4(), title: 'Read 10 Pages', category: 'Learning', createdAt: now.subtract(const Duration(days: 10)), history: {}),
-    ];
-
-    // Seed habit completion history for the last 6 days
-    for (int i = 6; i >= 1; i--) {
-      final day = now.subtract(Duration(days: i));
-      final dateStr = "${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}";
-      
-      // Habit 0 completed 5 days
-      if (i != 3) _habits[0].history[dateStr] = 'completed';
-      // Habit 1 completed 6 days
-      _habits[1].history[dateStr] = 'completed';
-      // Habit 2 completed 4 days
-      if (i != 2 && i != 5) _habits[2].history[dateStr] = 'completed';
-    }
-    
-    // Set streak counts
-    _habits[0] = _habits[0].copyWith(streakCount: 2);
-    _habits[1] = _habits[1].copyWith(streakCount: 6);
-    _habits[2] = _habits[2].copyWith(streakCount: 1);
-    
-    _storage.saveHabits(_habits);
-
-    // 5. Nutrition logs for today
-    _nutritionLogs = [
-      NutritionLog(
-        id: _uuid.v4(),
-        mealType: 'Breakfast',
-        foodName: 'Avocado Toast & Boiled Eggs',
-        calories: 420,
-        protein: 18,
-        carbs: 34,
-        fat: 22,
-        timestamp: DateTime(now.year, now.month, now.day, 8, 15),
-      ),
-      NutritionLog(
-        id: _uuid.v4(),
-        mealType: 'Lunch',
-        foodName: 'Grilled Chicken Quinoa Bowl',
-        calories: 580,
-        protein: 42,
-        carbs: 55,
-        fat: 16,
-        timestamp: DateTime(now.year, now.month, now.day, 13, 0),
-      ),
-      NutritionLog(
-        id: _uuid.v4(),
-        mealType: 'Snack',
-        foodName: 'Greek Yogurt with Blueberries',
-        calories: 180,
-        protein: 15,
-        carbs: 20,
-        fat: 4,
-        timestamp: DateTime(now.year, now.month, now.day, 16, 30),
-      ),
-    ];
-    _storage.saveNutritionLogs(_nutritionLogs);
-
-    // 6. Messages: Welcome message
-    _messages = [
-      AiMessage(
-        id: _uuid.v4(),
-        text: "Hello! I am Aurora, your AI health companion. I've analyzed your onboarding info and prepared a customized plan. How can I help you today?",
-        sender: "aurora",
-        timestamp: now.subtract(const Duration(minutes: 5)),
-      ),
-    ];
-    _storage.saveAiMessages(_messages);
   }
 }

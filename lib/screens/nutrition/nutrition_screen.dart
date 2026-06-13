@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../core/theme.dart';
-import '../../models/nutrition.dart';
 import '../../providers/health_provider.dart';
 
 class NutritionScreen extends StatefulWidget {
@@ -79,8 +78,9 @@ class _NutritionScreenState extends State<NutritionScreen> {
                     const SizedBox(height: 16),
                     
                     // Meal Type Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: _mealTypes.map((type) {
                         final isSel = _selectedMealType == type;
                         return ChoiceChip(
@@ -271,7 +271,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                       children: [
                         const Text("TODAY'S CALORIC SUMMARY", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AuroraTheme.textSecondary, letterSpacing: 1.5)),
                         const SizedBox(height: 8),
-                        Text("$totalCalories / ${calGoal} kcal", style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
+                        Text("$totalCalories / $calGoal kcal", style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
                         const SizedBox(height: 12),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(4),
@@ -472,12 +472,20 @@ class _NutritionScreenState extends State<NutritionScreen> {
           ),
         ),
         const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(color: AuroraTheme.textSecondary, fontSize: 11)),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AuroraTheme.textPrimary)),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(label, style: const TextStyle(color: AuroraTheme.textSecondary, fontSize: 11)),
+              ),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AuroraTheme.textPrimary)),
+              ),
+            ],
+          ),
         ),
       ],
     );

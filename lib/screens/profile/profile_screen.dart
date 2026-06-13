@@ -27,6 +27,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final heightController = TextEditingController(text: profile.height.toString());
     final weightController = TextEditingController(text: profile.weight.toString());
     String editAvatar = profile.profilePic;
+    String? editGender = profile.gender.isNotEmpty ? profile.gender : 'Other';
+    String editActivityLevel = profile.activityLevel.isNotEmpty ? profile.activityLevel : 'Moderate';
+
+    TimeOfDay parseTime(String timeStr) {
+      try {
+        final parts = timeStr.split(':');
+        return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+      } catch (e) {
+        return const TimeOfDay(hour: 7, minute: 0);
+      }
+    }
+
+    TimeOfDay editWakeTime = parseTime(profile.wakeUpTime);
+    TimeOfDay editBedTime = parseTime(profile.bedTime);
+
+    final List<String> editGoals = List<String>.from(profile.healthGoals);
+    final List<String> allGoals = [
+      'Improve Hydration',
+      'Sleep Better',
+      'Build Better Habits',
+      'Eat Healthier',
+      'Improve Energy Levels',
+      'Improve Consistency',
+    ];
+
+    String formatTimeOfDay(TimeOfDay time) {
+      final hour = time.hour.toString().padLeft(2, '0');
+      final minute = time.minute.toString().padLeft(2, '0');
+      return "$hour:$minute";
+    }
 
     showModalBottomSheet(
       context: context,
@@ -38,7 +68,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return Padding(
+            return Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.85,
+              ),
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(context).viewInsets.bottom,
                 left: 24,
@@ -69,8 +102,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // Avatar selector in edit dialog
                     const Text("Select Avatar", style: TextStyle(fontWeight: FontWeight.bold, color: AuroraTheme.textSecondary, fontSize: 13)),
                     const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      alignment: WrapAlignment.spaceEvenly,
                       children: AvatarWidget.avatarMap.keys.map((avatarId) {
                         final isSel = editAvatar == avatarId;
                         return GestureDetector(
@@ -124,12 +159,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               });
                             }
                           } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text("Error picking image: $e"),
-                                backgroundColor: Colors.redAccent,
-                              ),
-                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("Error picking image: $e"),
+                                  backgroundColor: Colors.redAccent,
+                                ),
+                              );
+                            }
                           }
                         },
                         icon: const Icon(Icons.photo_library_rounded),
@@ -184,20 +221,196 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: TextField(
-                            controller: heightController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(labelText: "Height (cm)"),
+                          child: DropdownButtonFormField<String>(
+                            value: editGender,
+                            dropdownColor: AuroraTheme.cardBg,
+                            decoration: const InputDecoration(
+                              labelText: "Gender",
+                            ),
+                            style: const TextStyle(color: AuroraTheme.textPrimary, fontSize: 16),
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                setDialogState(() {
+                                  editGender = newValue;
+                                });
+                              }
+                            },
+                            items: <String>['Male', 'Female', 'Other']
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
                     
-                    TextField(
-                      controller: weightController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: "Weight (kg)"),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: heightController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(labelText: "Height (cm)"),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: weightController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(labelText: "Weight (kg)"),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    DropdownButtonFormField<String>(
+                      value: editActivityLevel,
+                      dropdownColor: AuroraTheme.cardBg,
+                      decoration: const InputDecoration(
+                        labelText: "Activity Level",
+                        prefixIcon: Icon(Icons.directions_run_rounded, color: AuroraTheme.primary, size: 20),
+                      ),
+                      style: const TextStyle(color: AuroraTheme.textPrimary, fontSize: 16),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setDialogState(() {
+                            editActivityLevel = newValue;
+                          });
+                        }
+                      },
+                      items: <String>['Low', 'Moderate', 'High']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text("$value Activity"),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 20),
+
+                    const Text("Schedules", style: TextStyle(fontWeight: FontWeight.bold, color: AuroraTheme.textSecondary, fontSize: 13)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              final picked = await showTimePicker(
+                                context: context,
+                                initialTime: editWakeTime,
+                                builder: (context, child) {
+                                  return Theme(
+                                    data: Theme.of(context).copyWith(
+                                      colorScheme: const ColorScheme.dark(
+                                        primary: AuroraTheme.primary,
+                                        onPrimary: AuroraTheme.darkBg,
+                                        surface: AuroraTheme.cardBg,
+                                        onSurface: AuroraTheme.textPrimary,
+                                      ),
+                                    ),
+                                    child: child!,
+                                  );
+                                },
+                              );
+                              if (picked != null) {
+                                setDialogState(() {
+                                  editWakeTime = picked;
+                                });
+                              }
+                            },
+                            icon: const Icon(Icons.wb_sunny_rounded, color: Colors.amber, size: 16),
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text("Wake: ${editWakeTime.format(context)}"),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AuroraTheme.textPrimary,
+                              side: BorderSide(color: Colors.white.withOpacity(0.1)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              final picked = await showTimePicker(
+                                context: context,
+                                initialTime: editBedTime,
+                                builder: (context, child) {
+                                  return Theme(
+                                    data: Theme.of(context).copyWith(
+                                      colorScheme: const ColorScheme.dark(
+                                        primary: AuroraTheme.primary,
+                                        onPrimary: AuroraTheme.darkBg,
+                                        surface: AuroraTheme.cardBg,
+                                        onSurface: AuroraTheme.textPrimary,
+                                      ),
+                                    ),
+                                    child: child!,
+                                  );
+                                },
+                              );
+                              if (picked != null) {
+                                setDialogState(() {
+                                  editBedTime = picked;
+                                });
+                              }
+                            },
+                            icon: const Icon(Icons.bedtime_rounded, color: AuroraTheme.secondaryLight, size: 16),
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text("Bed: ${editBedTime.format(context)}"),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AuroraTheme.textPrimary,
+                              side: BorderSide(color: Colors.white.withOpacity(0.1)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    const Text("Health Goals", style: TextStyle(fontWeight: FontWeight.bold, color: AuroraTheme.textSecondary, fontSize: 13)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: allGoals.map((goal) {
+                        final isSel = editGoals.contains(goal);
+                        return FilterChip(
+                          label: Text(goal, style: const TextStyle(fontSize: 11)),
+                          selected: isSel,
+                          selectedColor: AuroraTheme.primary.withOpacity(0.2),
+                          checkmarkColor: AuroraTheme.primary,
+                          backgroundColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: isSel ? AuroraTheme.primary : Colors.white.withOpacity(0.1),
+                            ),
+                          ),
+                          onSelected: (selected) {
+                            setDialogState(() {
+                              if (selected) {
+                                editGoals.add(goal);
+                              } else {
+                                editGoals.remove(goal);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
                     ),
                     const SizedBox(height: 24),
                     
@@ -207,8 +420,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         final updated = profile.copyWith(
                           name: SpecialNameFormatter.formatName(nameController.text),
                           age: int.tryParse(ageController.text) ?? profile.age,
+                          gender: editGender,
                           height: double.tryParse(heightController.text) ?? profile.height,
                           weight: double.tryParse(weightController.text) ?? profile.weight,
+                          wakeUpTime: formatTimeOfDay(editWakeTime),
+                          bedTime: formatTimeOfDay(editBedTime),
+                          activityLevel: editActivityLevel,
+                          healthGoals: editGoals,
                           profilePic: editAvatar,
                         );
                         provider.updateProfile(updated);
@@ -250,7 +468,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Navigator.pop(context);
               final provider = Provider.of<HealthProvider>(context, listen: false);
               await provider.logout();
-              if (mounted) {
+              if (context.mounted) {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const LandingScreen()),
@@ -282,7 +500,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Navigator.pop(context);
               final provider = Provider.of<HealthProvider>(context, listen: false);
               await provider.resetAllData();
-              if (mounted) {
+              if (context.mounted) {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const LandingScreen()),

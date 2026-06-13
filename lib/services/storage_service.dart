@@ -41,18 +41,26 @@ class StorageService {
     // but clearing session logs the user out.
   }
 
+  // --- Scoping Key Helper ---
+  String _getScopedKey(String baseKey) {
+    final email = getLoggedInEmail();
+    if (email == null) return baseKey;
+    final safeEmail = email.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_').toLowerCase();
+    return "${baseKey}_$safeEmail";
+  }
+
   // --- Onboarding Status ---
   bool isOnboarded() {
-    return _prefs.getBool(keyIsOnboarded) ?? false;
+    return _prefs.getBool(_getScopedKey(keyIsOnboarded)) ?? false;
   }
 
   Future<void> setOnboarded(bool value) async {
-    await _prefs.setBool(keyIsOnboarded, value);
+    await _prefs.setBool(_getScopedKey(keyIsOnboarded), value);
   }
 
   // --- User Profile ---
   UserProfile? getUserProfile() {
-    final raw = _prefs.getString(keyProfile);
+    final raw = _prefs.getString(_getScopedKey(keyProfile));
     if (raw == null) return null;
     try {
       return UserProfile.fromJson(jsonDecode(raw));
@@ -62,12 +70,12 @@ class StorageService {
   }
 
   Future<void> saveUserProfile(UserProfile profile) async {
-    await _prefs.setString(keyProfile, jsonEncode(profile.toJson()));
+    await _prefs.setString(_getScopedKey(keyProfile), jsonEncode(profile.toJson()));
   }
 
   // --- Hydration Logs ---
   List<HydrationLog> getHydrationLogs() {
-    final rawList = _prefs.getStringList(keyHydration);
+    final rawList = _prefs.getStringList(_getScopedKey(keyHydration));
     if (rawList == null) return [];
     return rawList.map((e) {
       try {
@@ -80,12 +88,12 @@ class StorageService {
 
   Future<void> saveHydrationLogs(List<HydrationLog> logs) async {
     final rawList = logs.map((e) => jsonEncode(e.toJson())).toList();
-    await _prefs.setStringList(keyHydration, rawList);
+    await _prefs.setStringList(_getScopedKey(keyHydration), rawList);
   }
 
   // --- Sleep Logs ---
   List<SleepLog> getSleepLogs() {
-    final rawList = _prefs.getStringList(keySleep);
+    final rawList = _prefs.getStringList(_getScopedKey(keySleep));
     if (rawList == null) return [];
     return rawList.map((e) {
       try {
@@ -98,12 +106,12 @@ class StorageService {
 
   Future<void> saveSleepLogs(List<SleepLog> logs) async {
     final rawList = logs.map((e) => jsonEncode(e.toJson())).toList();
-    await _prefs.setStringList(keySleep, rawList);
+    await _prefs.setStringList(_getScopedKey(keySleep), rawList);
   }
 
   // --- Habits ---
   List<Habit> getHabits() {
-    final rawList = _prefs.getStringList(keyHabits);
+    final rawList = _prefs.getStringList(_getScopedKey(keyHabits));
     if (rawList == null) return [];
     return rawList.map((e) {
       try {
@@ -116,12 +124,12 @@ class StorageService {
 
   Future<void> saveHabits(List<Habit> habits) async {
     final rawList = habits.map((e) => jsonEncode(e.toJson())).toList();
-    await _prefs.setStringList(keyHabits, rawList);
+    await _prefs.setStringList(_getScopedKey(keyHabits), rawList);
   }
 
   // --- Nutrition Logs ---
   List<NutritionLog> getNutritionLogs() {
-    final rawList = _prefs.getStringList(keyNutrition);
+    final rawList = _prefs.getStringList(_getScopedKey(keyNutrition));
     if (rawList == null) return [];
     return rawList.map((e) {
       try {
@@ -134,12 +142,12 @@ class StorageService {
 
   Future<void> saveNutritionLogs(List<NutritionLog> logs) async {
     final rawList = logs.map((e) => jsonEncode(e.toJson())).toList();
-    await _prefs.setStringList(keyNutrition, rawList);
+    await _prefs.setStringList(_getScopedKey(keyNutrition), rawList);
   }
 
   // --- AI Chat Messages ---
   List<AiMessage> getAiMessages() {
-    final rawList = _prefs.getStringList(keyMessages);
+    final rawList = _prefs.getStringList(_getScopedKey(keyMessages));
     if (rawList == null) return [];
     return rawList.map((e) {
       try {
@@ -152,7 +160,7 @@ class StorageService {
 
   Future<void> saveAiMessages(List<AiMessage> messages) async {
     final rawList = messages.map((e) => jsonEncode(e.toJson())).toList();
-    await _prefs.setStringList(keyMessages, rawList);
+    await _prefs.setStringList(_getScopedKey(keyMessages), rawList);
   }
 
   // --- Reset All Data ---

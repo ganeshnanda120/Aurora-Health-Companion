@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../../core/theme.dart';
-import '../../models/habit.dart';
 import '../../providers/health_provider.dart';
 
 class HabitsScreen extends StatefulWidget {
@@ -64,73 +62,76 @@ class _HabitsScreenState extends State<HabitsScreen> {
                 right: 24,
                 top: 24,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Create New Habit",
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AuroraTheme.textPrimary),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: AuroraTheme.textSecondary),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  const Divider(color: Colors.white10),
-                  const SizedBox(height: 16),
-                  
-                  TextField(
-                    controller: _habitTitleController,
-                    autofocus: true,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      labelText: "Habit Name (e.g. Drink hot tea)",
-                      prefixIcon: Icon(Icons.star_outline_rounded),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Create New Habit",
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AuroraTheme.textPrimary),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: AuroraTheme.textSecondary),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  const Text("Category", style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: _categories.map((cat) {
-                      final isSel = _selectedCategory == cat;
-                      return ChoiceChip(
-                        label: Text(cat, style: TextStyle(fontSize: 12, color: isSel ? AuroraTheme.darkBg : AuroraTheme.textPrimary)),
-                        selected: isSel,
-                        selectedColor: AuroraTheme.accentHabits,
-                        backgroundColor: Colors.white.withOpacity(0.05),
-                        onSelected: (selected) {
-                          if (selected) {
-                            setDialogState(() {
-                              _selectedCategory = cat;
-                            });
-                          }
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  ElevatedButton(
-                    onPressed: () {
-                      _addHabit(_habitTitleController.text, _selectedCategory);
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AuroraTheme.accentHabits,
-                      foregroundColor: AuroraTheme.darkBg,
+                    const Divider(color: Colors.white10),
+                    const SizedBox(height: 16),
+                    
+                    TextField(
+                      controller: _habitTitleController,
+                      autofocus: true,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        labelText: "Habit Name (e.g. Drink hot tea)",
+                        prefixIcon: Icon(Icons.star_outline_rounded),
+                      ),
                     ),
-                    child: const Text("Create Habit"),
-                  ),
-                  const SizedBox(height: 32),
-                ],
+                    const SizedBox(height: 20),
+                    
+                    const Text("Category", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _categories.map((cat) {
+                        final isSel = _selectedCategory == cat;
+                        return ChoiceChip(
+                          label: Text(cat, style: TextStyle(fontSize: 12, color: isSel ? AuroraTheme.darkBg : AuroraTheme.textPrimary)),
+                          selected: isSel,
+                          selectedColor: AuroraTheme.accentHabits,
+                          backgroundColor: Colors.white.withOpacity(0.05),
+                          onSelected: (selected) {
+                            if (selected) {
+                              setDialogState(() {
+                                _selectedCategory = cat;
+                              });
+                            }
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    ElevatedButton(
+                      onPressed: () {
+                        _addHabit(_habitTitleController.text, _selectedCategory);
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AuroraTheme.accentHabits,
+                        foregroundColor: AuroraTheme.darkBg,
+                      ),
+                      child: const Text("Create Habit"),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
             );
           },
